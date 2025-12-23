@@ -26,7 +26,8 @@ def initialize_access_times():
 
 def update_access_time(file_path):
     _file_access_times[file_path] = time.time()
-    os.utime(file_path, None)
+    if os.path.exists(file_path):
+        os.utime(file_path, None)
 
 
 def delete_old_files_until_space(target_dir, required_bytes):
@@ -34,13 +35,7 @@ def delete_old_files_until_space(target_dir, required_bytes):
     minimum_free = MINIMUM_FREE_SPACE_GB * 1024 * 1024 * 1024
     needed_space = required_bytes + minimum_free
     
-    if free >= needed_space:
-        logging.info("Need {:.2f} GB of space, but we have {:.2f} GB of free space. No files will be deleted.".format(needed_space / (1024 * 1024 * 1024), free / (1024 * 1024 * 1024)))
-        return
-    space_to_free = needed_space - free
-    
-    logging.info("Not enough free space. Deleting old files to free up space. Needed: {:.2f} GB, Available: {:.2f} GB (freeing {:.2f} GB)".format(needed_space / (1024 * 1024 * 1024), free / (1024 * 1024 * 1024), space_to_free / (1024 * 1024 * 1024)))
-    
+    # Collect and sort files by access time first
     local_base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
     files_with_times = []
     
@@ -49,6 +44,14 @@ def delete_old_files_until_space(target_dir, required_bytes):
             files_with_times.append((access_time, file_path))
     
     files_with_times.sort()
+    
+    if free >= needed_space:
+        oldest_file_info = " Oldest file: {}".format(files_with_times[0][1]) if files_with_times else ""
+        logging.info("Need {:.2f} GB of space, but we have {:.2f} GB of free space. No files will be deleted.{}".format(needed_space / (1024 * 1024 * 1024), free / (1024 * 1024 * 1024), oldest_file_info))
+        return
+    space_to_free = needed_space - free
+    
+    logging.info("Not enough free space. Deleting old files to free up space. Needed: {:.2f} GB, Available: {:.2f} GB (freeing {:.2f} GB)".format(needed_space / (1024 * 1024 * 1024), free / (1024 * 1024 * 1024), space_to_free / (1024 * 1024 * 1024)))
     
     freed_space = 0
     for access_time, file_path in files_with_times:
