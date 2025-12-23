@@ -7,6 +7,20 @@ import subprocess
 _repo_files_cache = {}
 
 
+def get_repo_files(repo_id):
+    if repo_id not in _repo_files_cache:
+        logging.info("Fetching file list for repo: {}".format(repo_id))
+        try:
+            _repo_files_cache[repo_id] = list_huggingface_repo_files(repo_id)
+        except Exception as e:
+            logging.error("Failed to fetch repo files for {}: {}".format(repo_id, e))
+            _repo_files_cache[repo_id] = []  # Cache empty list to avoid repeated failures
+    else:
+        logging.debug("Using cached file list for repo: {}".format(repo_id))
+    
+    return _repo_files_cache[repo_id]
+
+
 def ensure_huggingface_hub():
     try:
         import huggingface_hub
@@ -87,14 +101,8 @@ def download_models(obj, repo_id):
 
     logging.info("Found {} string(s) to check against repo".format(len(all_strings)))
 
-    # Get cached repo files or fetch them
-    if repo_id not in _repo_files_cache:
-        logging.info("Fetching file list for repo: {}".format(repo_id))
-        _repo_files_cache[repo_id] = list_huggingface_repo_files(repo_id)
-    else:
-        logging.info("Using cached file list for repo: {}".format(repo_id))
-
-    repo_files = _repo_files_cache[repo_id]
+    # Get cached repo files
+    repo_files = get_repo_files(repo_id)
 
     # Local base directory for models
     local_base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")

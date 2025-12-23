@@ -423,7 +423,31 @@ def get_filename_list(folder_name: str) -> list[str]:
         global filename_list_cache
         filename_list_cache[folder_name] = out
     cache_helper.set(folder_name, out)
-    return list(out[0])
+    
+    result = list(out[0])
+    
+    # Add HuggingFace repo files from matching folder
+    import huggingface_utils
+    repo_files = huggingface_utils.get_repo_files(os.environ['HF_REPO'])
+    
+    # Filter by folder name and extensions
+    global folder_names_and_paths
+    allowed_extensions = folder_names_and_paths[folder_name][1]
+    
+    for repo_file in repo_files:
+        # Check if file is in a directory that starts with folder_name
+        file_dir = os.path.dirname(repo_file)
+        file_basename = os.path.basename(repo_file)
+        
+        if file_dir.startswith(folder_name):
+            # Check extension
+            if len(allowed_extensions) == 0 or os.path.splitext(file_basename)[-1].lower() in allowed_extensions:
+                # Get the relative path within the folder
+                relative_path = os.path.relpath(repo_file, folder_name)
+                if relative_path not in result:
+                    result.append(relative_path)
+    
+    return result
 
 def get_save_image_path(filename_prefix: str, output_dir: str, image_width=0, image_height=0) -> tuple[str, str, int, str, str]:
     def map_filename(filename: str) -> tuple[int, str]:
