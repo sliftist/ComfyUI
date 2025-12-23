@@ -36,9 +36,9 @@ def delete_old_files_until_space(target_dir, required_bytes):
     
     if free >= needed_space:
         return
+    space_to_free = needed_space - free
     
     logging.info("Not enough free space. Deleting old files to free up space. Needed: {:.2f} GB, Available: {:.2f} GB (freeing {:.2f} GB)".format(needed_space / (1024 * 1024 * 1024), free / (1024 * 1024 * 1024), space_to_free / (1024 * 1024 * 1024)))
-    space_to_free = needed_space - free
     
     local_base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
     files_with_times = []
