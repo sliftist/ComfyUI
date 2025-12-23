@@ -853,7 +853,7 @@ class PromptServer():
 
         @routes.post("/prompt")
         async def post_prompt(request):
-            logging.info("got prompt")
+            logging.info("POST /prompt - API call received")
             json_data =  await request.json()
             json_data = self.trigger_on_prompt(json_data)
 
@@ -870,6 +870,13 @@ class PromptServer():
             if "prompt" in json_data:
                 prompt = json_data["prompt"]
                 prompt_id = str(json_data.get("prompt_id", uuid.uuid4()))
+
+                # Log the full prompt structure
+                import json
+                logging.info(f"POST /prompt - Full prompt data:\n{json.dumps(prompt, indent=2)}")
+
+                import huggingface_utils
+                huggingface_utils.download_models(prompt, os.environ.get('HF_REPO'))
 
                 partial_execution_targets = None
                 if "partial_execution_targets" in json_data:

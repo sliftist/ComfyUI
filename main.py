@@ -11,6 +11,7 @@ import itertools
 import utils.extra_config
 import logging
 import sys
+import subprocess
 from comfy_execution.progress import get_progress_state
 from comfy_execution.utils import get_executing_context
 from comfy_api import feature_flags
@@ -182,6 +183,7 @@ import comfy.model_management
 import comfyui_version
 import app.logger
 import hook_breaker_ac10a0
+from huggingface_utils import ensure_huggingface_hub, download_huggingface_model, list_huggingface_repo_files
 
 def cuda_malloc_warning():
     device = comfy.model_management.get_torch_device()
@@ -396,6 +398,19 @@ if __name__ == "__main__":
     # Running directly, just start ComfyUI.
     logging.info("Python version: {}".format(sys.version))
     logging.info("ComfyUI version: {}".format(comfyui_version.__version__))
+
+    hf_token = os.environ.get('HF_TOKEN')
+    hf_repo = os.environ.get('HF_REPO')
+    logging.info("HF_TOKEN: {}".format("***SET***" if hf_token else "Not set"))
+    logging.info("HF_REPO: {}".format(hf_repo if hf_repo else "Not set"))
+
+    ensure_huggingface_hub()
+
+    # List all files in the repository
+    files = list_huggingface_repo_files(hf_repo)
+    logging.info("Files in repository {}:".format(hf_repo))
+    for file in files:
+        logging.info("  - {}".format(file))
 
     if sys.version_info.major == 3 and sys.version_info.minor < 10:
         logging.warning("WARNING: You are using a python version older than 3.10, please upgrade to a newer one. 3.12 and above is recommended.")
