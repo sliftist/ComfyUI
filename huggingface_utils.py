@@ -35,7 +35,7 @@ def delete_old_files_until_space(target_dir, required_bytes):
     needed_space = required_bytes + minimum_free
     
     if free >= needed_space:
-        logging.info("Need {} GB of space, but we have {} GB of free space. No files will be deleted.".format(needed_space / (1024 * 1024 * 1024), free / (1024 * 1024 * 1024)))
+        logging.info("Need {:.2f} GB of space, but we have {:.2f} GB of free space. No files will be deleted.".format(needed_space / (1024 * 1024 * 1024), free / (1024 * 1024 * 1024)))
         return
     space_to_free = needed_space - free
     
