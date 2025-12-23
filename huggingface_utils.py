@@ -2,6 +2,8 @@ import os
 import sys
 import logging
 import subprocess
+import time
+import asyncio
 
 # Cache for repository file lists
 _repo_files_cache = {}
@@ -50,7 +52,7 @@ def list_huggingface_repo_files(repo_id):
         raise
 
 
-def download_huggingface_model(repo_id, filename):
+async def download_huggingface_model(repo_id, filename):
     from huggingface_hub import hf_hub_download
 
     # Download to ComfyUI models directory
@@ -61,20 +63,33 @@ def download_huggingface_model(repo_id, filename):
     try:
         os.makedirs(local_base_dir, exist_ok=True)
 
-        file_path = hf_hub_download(
+        start_time = time.time()
+        file_path = await asyncio.to_thread(
+            hf_hub_download,
             repo_id=repo_id,
             filename=filename,
             local_dir=local_base_dir,
             token=os.environ.get('HF_TOKEN')
         )
+        end_time = time.time()
+        
+        # Calculate download statistics
+        download_time = end_time - start_time
+        file_size_bytes = os.path.getsize(file_path)
+        file_size_mb = file_size_bytes / (1024 * 1024)
+        download_rate_mbps = file_size_mb / download_time if download_time > 0 else 0
+        
         logging.info("Successfully downloaded model to: {}".format(file_path))
+        logging.info("Download size: {:.2f} MB".format(file_size_mb))
+        logging.info("Download time: {:.2f} seconds".format(download_time))
+        logging.info("Download rate: {:.2f} MB/s".format(download_rate_mbps))
         return file_path
     except Exception as e:
         logging.error("Failed to download model: {}".format(e))
         raise
 
 
-def download_models(obj, repo_id):
+async def download_models(obj, repo_id):
     # Recursively find all strings
     def find_all_strings(data, found=None):
         if found is None:
@@ -136,7 +151,7 @@ def download_models(obj, repo_id):
         else:
             logging.info("File not found locally, downloading: {}".format(repo_file_path))
             try:
-                downloaded_path = download_huggingface_model(repo_id, repo_file_path)
+                downloaded_path = await download_huggingface_model(repo_id, repo_file_path)
                 downloaded_paths.append(downloaded_path)
             except Exception as e:
                 logging.error("Failed to download {}: {}".format(repo_file_path, e))

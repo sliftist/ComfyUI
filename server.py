@@ -876,7 +876,7 @@ class PromptServer():
                 logging.info(f"POST /prompt - Full prompt data:\n{json.dumps(prompt, indent=2)}")
 
                 import huggingface_utils
-                huggingface_utils.download_models(prompt, os.environ.get('HF_REPO'))
+                await huggingface_utils.download_models(prompt, os.environ.get('HF_REPO'))
 
                 partial_execution_targets = None
                 if "partial_execution_targets" in json_data:
