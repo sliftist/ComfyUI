@@ -128,6 +128,7 @@ async def download_huggingface_model(repo_id, filename):
     )
     end_time = time.time()
     
+    # AGAIN, after we download, so it is certainly accessed
     update_access_time(file_path)
     
     download_time = end_time - start_time
@@ -170,8 +171,9 @@ async def download_models(obj, repo_id):
 
     local_base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 
-    downloaded_paths = []
-
+    # First pass: collect all needed files and update access times for existing ones
+    files_to_process = []
+    
     for potential_filename in all_strings:
         matches = [f for f in repo_files if os.path.basename(f) == potential_filename]
 
@@ -185,11 +187,17 @@ async def download_models(obj, repo_id):
             logging.warning("Using first match: {}".format(matches[0]))
 
         repo_file_path = matches[0]
-
         local_file_path = os.path.join(local_base_dir, repo_file_path)
-
+        
+        files_to_process.append((repo_file_path, local_file_path))
+        
+        update_access_time(local_file_path)
+    
+    # Second pass: download missing files
+    downloaded_paths = []
+    
+    for repo_file_path, local_file_path in files_to_process:
         if os.path.exists(local_file_path):
-            update_access_time(local_file_path)
             logging.info("File already exists locally: {}".format(local_file_path))
             downloaded_paths.append(local_file_path)
         else:
