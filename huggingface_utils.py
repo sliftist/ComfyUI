@@ -178,7 +178,7 @@ async def download_models(obj, repo_id):
     files_to_process = []
     
     for potential_filename in all_strings:
-        matches = [f for f in repo_files if os.path.basename(f) == potential_filename]
+        matches = [f for f in repo_files if f.endswith(potential_filename)]
 
         if not matches:
             if potential_filename.endswith('.safetensors'):
